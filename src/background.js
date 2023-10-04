@@ -38,6 +38,32 @@ async function createWindow() {
     win.loadURL('app://./index.html')
   }
 
+  ipcMain.handle("get-printers-list", async () => {
+    async function sh() {
+      return new Promise(function(resolve, reject) {
+        exec("wmic printer list brief", (err, stdout, stderr) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          stdout = stdout.split("  ");
+          var printers = [];
+          let j = 0;
+          stdout = stdout.filter((item) => item);
+          for (let i = 0; i < stdout.length; i++) {
+            if (stdout[i] == " \r\r\n" || stdout[i] == "\r\r\n") {
+              printers[j] = stdout[i + 1];
+              j++;
+            }
+          }
+          resolve({ printers, stdout });
+        });
+      });
+    }
+    let data = await sh();
+    return data;
+  });
+
   ipcMain.handle('print-data-order', async (event, ...args) => {
     const newData = args;
     let dataPrint = JSON.parse(newData);
